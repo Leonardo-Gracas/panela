@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar pytest
+        run: pip install pytest
+      - name: Testes automatizados
+        run: python -m pytest tests/ -q
+      - name: Exemplos executam
+        run: |
+          for f in exemplos/*.pan; do
+            python -m panela "$f" > /dev/null
+          done
+      - name: Programas rejeitados sao recusados
+        run: |
+          for f in exemplos/rejeitados/*.pan; do
+            if python -m panela "$f" > /dev/null 2>&1; then
+              echo "FALHA: $f deveria ter sido rejeitado"; exit 1
+            fi
+          done
+      - name: Avaliacao da verificacao semantica
+        run: |
+          python avaliacao/gerar_corpus.py
+          python avaliacao/medir.py
